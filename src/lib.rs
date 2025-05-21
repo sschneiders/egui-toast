@@ -226,7 +226,7 @@ impl Toasts {
     
     /// Useful when you only want to store Toasts in context
     /// Async block is a prime example for using this
-    pub fn store_toasts(&mut self, ctx: &mut Context) {
+    pub fn store_toasts(&mut self, ctx: &Context) {
         let mut toasts: Vec<Toast> = ctx.data_mut(|d| d.get_temp(self.id).unwrap_or_default());
         toasts.extend(std::mem::take(&mut self.added_toasts));
         self.persist_toasts(ctx, toasts);
