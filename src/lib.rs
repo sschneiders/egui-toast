@@ -161,6 +161,12 @@ impl Toasts {
 
     /// Show and update all toasts
     pub fn show(&mut self, ctx: &Context) {
+        let dt = ctx.input(|i| i.unstable_dt) as f64;
+        
+        self.render(ctx, dt);
+    }
+
+    fn render(&mut self, ctx: &Context, dt: f64) {
         let Self {
             id,
             align,
@@ -168,13 +174,10 @@ impl Toasts {
             direction,
             ..
         } = *self;
-
-        let dt = ctx.input(|i| i.unstable_dt) as f64;
-
         let mut toasts: Vec<Toast> = ctx.data_mut(|d| d.get_temp(id).unwrap_or_default());
         toasts.extend(std::mem::take(&mut self.added_toasts));
         toasts.retain(|toast| toast.options.ttl_sec > 0.0);
-
+        
         for (i, toast) in toasts.iter_mut().enumerate() {
             let response = Area::new(id.with("toast").with(i))
                 .anchor(align, offset.to_vec2())
@@ -218,7 +221,19 @@ impl Toasts {
             }
         }
 
-        ctx.data_mut(|d| d.insert_temp(id, toasts));
+        self.persist_toasts(ctx, toasts);
+    }
+    
+    /// Useful when you only want to store Toasts in context
+    /// Async block is a prime example for using this
+    pub fn store_toasts(&mut self, ctx: &mut Context) {
+        let mut toasts: Vec<Toast> = ctx.data_mut(|d| d.get_temp(self.id).unwrap_or_default());
+        toasts.extend(std::mem::take(&mut self.added_toasts));
+        self.persist_toasts(ctx, toasts);
+    }
+    
+    fn persist_toasts(&self, ctx: &Context, toasts: Vec<Toast>) {
+        ctx.data_mut(|d| d.insert_temp(self.id, toasts));
     }
 }
 
